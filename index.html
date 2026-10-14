@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="color-scheme" content="dark">
+    <title>Potato Key System</title>
+    <style>
+        :root {
+            --bg: #07070d;
+            --card: rgba(255,255,255,0.05);
+            --border: rgba(255,255,255,0.12);
+            --text: #f2f4ff;
+            --muted: #98a0b8;
+            --cyan: #00f2fe;
+            --violet: #8b5cf6;
+            --gold: #ffd84d;
+            color-scheme: dark;
+            box-sizing: border-box;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { height: 100%; margin: 0; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex; align-items: center; justify-content: center;
+            padding: 24px; overflow-x: hidden; position: relative;
+        }
+
+        /* Glowing animated orbs */
+        .orb { position: fixed; border-radius: 50%; filter: blur(90px); opacity: 0.55; z-index: 0; animation: float 14s ease-in-out infinite; }
+        .orb.a { width: 340px; height: 340px; background: var(--violet); top: -80px; left: -80px; }
+        .orb.b { width: 300px; height: 300px; background: var(--cyan); bottom: -90px; right: -70px; animation-delay: -6s; }
+        @keyframes float { 0%,100% { transform: translate(0,0); } 50% { transform: translate(40px,30px); } }
+
+        /* Subtle grid */
+        body::before {
+            content: ""; position: fixed; inset: 0; z-index: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+            background-size: 44px 44px;
+            mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+            -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+        }
+
+        .card {
+            position: relative; z-index: 1;
+            width: 100%; max-width: 420px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 36px 28px 30px;
+            text-align: center;
+            backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08);
+            animation: rise .7s cubic-bezier(.2,.8,.2,1) both;
+        }
+        @keyframes rise { from { opacity: 0; transform: translateY(18px) scale(.98); } to { opacity: 1; transform: none; } }
+
+        .badge {
+            display: inline-block; font-size: 11px; letter-spacing: .22em; text-transform: uppercase;
+            color: var(--cyan); border: 1px solid rgba(0,242,254,.35); background: rgba(0,242,254,.08);
+            padding: 6px 12px; border-radius: 999px; margin-bottom: 18px;
+        }
+        .logo { font-size: 44px; line-height: 1; margin-bottom: 10px; filter: drop-shadow(0 0 18px rgba(255,216,77,.55)); }
+        h1 {
+            margin: 0 0 10px; font-size: 30px; letter-spacing: -.02em; font-weight: 800;
+            background: linear-gradient(90deg, var(--gold), #fff 45%, var(--cyan));
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+        }
+        p { margin: 0; font-size: 14px; line-height: 1.7; color: var(--muted); }
+
+        .steps { display: flex; justify-content: center; gap: 8px; margin: 22px 0 6px; }
+        .dot { width: 34px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.14); transition: .4s; }
+        .dot.on { background: linear-gradient(90deg, var(--cyan), var(--violet)); box-shadow: 0 0 12px rgba(0,242,254,.6); }
+
+        .btn {
+            position: relative; overflow: hidden;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            width: 100%; margin-top: 22px; padding: 16px 0;
+            border: 0; border-radius: 16px; cursor: pointer;
+            font: inherit; font-size: 17px; font-weight: 700; letter-spacing: .04em;
+            text-decoration: none; color: #04121a;
+            background: linear-gradient(135deg, var(--cyan), #6ee7ff 50%, var(--violet));
+            box-shadow: 0 10px 30px rgba(0,242,254,.28);
+            transition: transform .2s, box-shadow .2s, opacity .3s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn::after {
+            content: ""; position: absolute; top: 0; left: -120%; width: 60%; height: 100%;
+            background: linear-gradient(100deg, transparent, rgba(255,255,255,.55), transparent);
+            transform: skewX(-20deg); animation: shine 3.2s ease-in-out infinite;
+        }
+        @keyframes shine { 0% { left: -120%; } 55%,100% { left: 160%; } }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 14px 38px rgba(0,242,254,.4); }
+        .btn:active { transform: translateY(0) scale(.98); }
+        .btn.loading { background: #2a2d3d; color: var(--muted); box-shadow: none; pointer-events: none; }
+        .btn.loading::after { display: none; }
+
+        .spinner {
+            width: 18px; height: 18px; border-radius: 50%;
+            border: 2.5px solid rgba(255,255,255,.2); border-top-color: var(--cyan);
+            animation: spin .7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .key-label { margin-top: 24px; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+        .key-box {
+            margin-top: 10px; padding: 18px 14px; border-radius: 14px;
+            font-family: "SF Mono", "Fira Code", Menlo, Consolas, monospace; font-size: 19px; font-weight: 600;
+            letter-spacing: .06em; color: var(--cyan); word-break: break-all;
+            background: rgba(0,0,0,.45); border: 1px solid rgba(0,242,254,.4);
+            box-shadow: 0 0 24px rgba(0,242,254,.18), inset 0 0 20px rgba(0,242,254,.06);
+            text-shadow: 0 0 12px rgba(0,242,254,.6);
+            animation: pop .5s cubic-bezier(.2,1.4,.4,1) both;
+        }
+        @keyframes pop { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: none; } }
+        .btn.copy.done { background: linear-gradient(135deg, #34d399, #10b981); box-shadow: 0 10px 30px rgba(16,185,129,.35); }
+
+        .foot { margin-top: 22px; font-size: 11px; color: rgba(152,160,184,.6); letter-spacing: .06em; }
+        [hidden] { display: none !important; }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation: none !important; transition: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="orb a"></div>
+    <div class="orb b"></div>
+
+    <main class="card">
+        <!-- STEP 1 -->
+        <section id="step-gate">
+            <div class="badge">Access Required</div>
+            <div class="logo">🥔</div>
+            <h1>Potato Key System</h1>
+            <p>Press <b style="color:#fff">Continue</b> to visit the creator's TikTok.<br>Come back to this page to get your key.</p>
+            <div class="steps"><span class="dot on"></span><span class="dot"></span></div>
+            <a class="btn" id="continue-btn" href="https://www.tiktok.com/@user3296106291804?_r=1&_t=ZS-9AXzQvJ8aqT" target="_blank" rel="noopener noreferrer">Continue</a>
+        </section>
+
+        <!-- STEP 2 -->
+        <section id="step-result" hidden>
+            <div class="badge">Success</div>
+            <div class="logo">🎉</div>
+            <h1>Key Generated</h1>
+            <p>Copy your key and paste it into the Roblox script.</p>
+            <div class="steps"><span class="dot on"></span><span class="dot on"></span></div>
+            <div class="key-label">Your Key</div>
+            <div class="key-box" id="key-display">Generating…</div>
+            <button class="btn copy" id="copy-btn">Copy Key</button>
+        </section>
+
+        <div class="foot">Potato Hub &middot; Free Key</div>
+    </main>
+
+    <script>
+        const continueBtn = document.getElementById('continue-btn');
+        const copyBtn = document.getElementById('copy-btn');
+        const stepGate = document.getElementById('step-gate');
+        const stepResult = document.getElementById('step-result');
+        const keyDisplay = document.getElementById('key-display');
+
+        let clicked = false;   // pressed Continue
+        let wentAway = false;  // left this page (went to TikTok)
+        let started = false;   // loading already started
+
+        function generateRandomString(length) {
+            const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        function showKey(key) {
+            stepGate.hidden = true;
+            stepResult.hidden = false;
+            keyDisplay.innerText = key;
+        }
+
+        // Back from TikTok: show "Loading…" for 1 second, then reveal the key
+        function startLoading() {
+            if (started) return;
+            started = true;
+            continueBtn.classList.add('loading');
+            continueBtn.innerHTML = '<span class="spinner"></span>Loading…';
+            setTimeout(() => {
+                const newKey = 'Potato_Free' + generateRandomString(8);
+                try { sessionStorage.setItem('userKey', newKey); } catch (e) {}
+                showKey(newKey);
+            }, 1000);
+        }
+
+        continueBtn.addEventListener('click', () => { clicked = true; });
+
+        document.addEventListener('visibilitychange', () => {
+            if (!clicked) return;
+            if (document.visibilityState === 'hidden') {
+                wentAway = true;
+            } else if (wentAway) {
+                startLoading();
+            }
+        });
+        window.addEventListener('pageshow', () => { if (clicked && wentAway) startLoading(); });
+        window.addEventListener('blur', () => { if (clicked) wentAway = true; });
+        window.addEventListener('focus', () => { if (clicked && wentAway) startLoading(); });
+
+        copyBtn.addEventListener('click', () => {
+            const text = keyDisplay.innerText;
+            const done = () => {
+                copyBtn.innerText = 'Copied ✓';
+                copyBtn.classList.add('done');
+                setTimeout(() => { copyBtn.innerText = 'Copy Key'; copyBtn.classList.remove('done'); }, 1500);
+            };
+            const fallback = () => {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                try { document.execCommand('copy'); done(); } catch (e) {}
+                document.body.removeChild(ta);
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(done).catch(fallback);
+            } else {
+                fallback();
+            }
+        });
+
+        // On reload, show the already-issued key
+        try {
+            const saved = sessionStorage.getItem('userKey');
+            if (saved) showKey(saved);
+        } catch (e) {}
+    </script>
+</body>
+</html>
